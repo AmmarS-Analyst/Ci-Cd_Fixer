@@ -23,7 +23,7 @@ Phase 1 — Core loop (DONE — verified 2026-08-14)
 * No auto-apply yet. Just diagnose and log.
 * Definition of done for Phase 1: 5-10 different fake broken builds (bad env var, missing dependency, failed test, wrong Docker tag, bad port, missing script, etc.) run through the loop, each producing a sensible diagnosis logged correctly in Postgres.
 
-Phase 2 — Guardrails (the part that matters most — do not rush this)
+Phase 2 — Guardrails (the part that matters most — do not rush this) — DONE (verified 2026-08-14)
 
 * Dry-run mode by default — agent proposes a diff/fix, never auto-merges
 * Human-approval gate before any fix touches `main` or gets applied for real
@@ -32,7 +32,7 @@ Phase 2 — Guardrails (the part that matters most — do not rush this)
 * Confidence threshold — if below a set %, escalate to human instead of acting
 * Definition of done: every guardrail above is implemented and has a test case proving it actually blocks the unsafe action (not just present in code but unverified).
 
-Phase 3 — Rollback logic
+Phase 3 — Rollback logic — DONE (verified 2026-08-14, against a real GitHub Actions run)
 
 * After applying an approved fix, rerun the pipeline
 * If it still fails, or fails differently, auto-revert the fix
@@ -56,14 +56,38 @@ Phase 5 — Observability dashboard
 CURRENT STATE (update this section yourself as you make progress — keep it accurate)
 
 * `docker compose up -d --build` works. Three containers: `devops-agent` (Node/Express app), `ollama`, `agent-db` (Postgres).
-* Fixed a Postgres race condition: `docker-compose.yml` has a healthcheck on `db`, `agent` depends on `db: condition: service_healthy`. `db.js` also retries `initDb()` internally.
-* Model `qwen2.5-coder:7b` is pulled into the `ollama` container.
-* **Phase 1 core loop is verified working end-to-end (2026-08-14)** via the `rawLogs` test path: 8 distinct fake broken builds (missing npm script, missing dependency, failing test, bad Docker tag, port conflict, DB connection refused, missing env var, Git SSH permission failure) were sent through `POST /webhook/pipeline-failed` and each produced a sensible diagnosis with reasonable confidence (85-95%), correctly logged in the `incidents` Postgres table. Verified via `docker exec agent-db psql -U postgres -d agent -c "SELECT ..."`.
-* **Two real bugs fixed on 2026-08-14, both were silently breaking the entire loop:**
-  1. `agent/src/github/github.service.js` — `fetchFailedRunLogs()` was treating GitHub's logs ZIP response as raw text. Fixed: now uses `adm-zip` to extract all log entries and concatenates them (labeled by filename) before sending to the model. NOT yet tested against a real GitHub Actions run — `GITHUB_TOKEN`/`GITHUB_OWNER`/`GITHUB_REPO` in `.env` are still empty, so this path is unverified against live GitHub. Extraction logic itself was unit-tested against a synthetic ZIP and works correctly.
-  2. `node-fetch@3.3.2` is ESM-only — `require("node-fetch")` in CJS code returns a non-callable module namespace object, not the `fetch` function. Every `fetch()` call in `github.service.js` and `ollama.service.js` was throwing `"fetch is not a function"` at runtime — this is why Phase 1 had never actually been confirmed working end-to-end before now. Fix: removed `node-fetch` entirely and switched to Node 20's native global `fetch` (no import needed).
-* **Known minor issue (not blocking):** the model doesn't always strictly follow the `action_type` enum in the system prompt — one test case returned `"permissions|test"` instead of a single value. Worth tightening the prompt or adding response validation before Phase 4's eval suite, since eval scoring will need a clean enum to bucket against.
-* Phases 2-5 are not started.
+* Model `qwen2.5-coder:7b` is pulled into the `ollama` container, running CPU-only.
+* **Phases 1, 2, and 3 are all done and verified against a real GitHub Actions run**, not just synthetic `rawLogs` tests. A sacrificial test repo exists at `github.com/AmmarS-Analyst/cicd-fixer-test-target` (private) for exactly this — deliberately breakable workflows to exercise the real fetch → diagnose → apply → verify → merge/rollback path. Do not touch the developer's other repos; this one is fair game for repeated destructive testing.
+* **Phase 1**: 8 distinct fake broken builds via `rawLogs`, plus a real GitHub Actions run (missing `left-pad` dependency), all produced correct diagnoses logged in Postgres.
+* **Phase 2 guardrails, each verified by deliberately tripping it:**
+  - Confidence threshold + retry cap: set `CONFIDENCE_THRESHOLD=101` → incident escalated with `escalated_reason=low_confidence_after_max_retries`, `retry_count=2` (3 total diagnosis attempts).
+  - Cost ceiling: set `COST_CEILING_USD=0.0000001` → escalated with `cost_ceiling_exceeded` on the very first attempt despite 95% confidence.
+  - Human-approval gate: an incident with no real GitHub run context correctly routes to `approved_manual_action_required` on approval rather than attempting anything; double-approving an already-resolved incident is rejected with a 400.
+  - Reject endpoint works (`POST /webhook/incidents/:id/reject`).
+* **Phase 3 apply/verify/rollback, both paths proven for real against the test repo:**
+  - Success path: real "missing dependency" diagnosis → approved → agent created branch `fixer/incident-N`, committed the fix to `package.json`, opened a PR, triggered `workflow_dispatch` to rerun CI on that branch, rerun passed, PR auto-merged, branch deleted. Confirmed on GitHub (package.json on `main` updated, PR shows `merged: true`).
+  - Rollback path: a genuine model misdiagnosis (log clearly said `Cannot find module 'is-odd'`, model diagnosed `'left-pad'` — already installed, doesn't fix anything) was approved, applied, verified via rerun (which correctly failed), and automatically rolled back — PR closed unmerged, branch deleted, `main` untouched. This is the mechanism working as designed: even a wrong diagnosis can't reach `main` because the fix is verified before merge, not trusted blindly.
+  - Auto-apply is intentionally narrow: only `action_type: "dependency"` diagnoses with a real GitHub run get auto-applied (a named package added to `package.json`). Everything else correctly falls back to `approved_manual_action_required` — refusing to fabricate a capability the agent doesn't safely have (see Phase 4 philosophy below).
+* **DB schema extended** (`agent/src/db/db.js`) with guardrail/apply/rollback columns: `status`, `escalated_reason`, `retry_count`, `prompt_tokens`, `completion_tokens`, `cost_usd`, `github_owner`, `github_repo`, `run_id`, `approved_by`/`approved_at`, `rejected_by`/`rejected_at`, `fix_commit_sha`, `fix_branch`, `applied_at`, `rerun_run_id`, `rerun_conclusion`, `rolled_back_at`, `rollback_reason`. Added via `ALTER TABLE ADD COLUMN IF NOT EXISTS` in `initDb()`, not baked into `CREATE TABLE`, because `docker-entrypoint-initdb.d` also runs `001_create_incidents.sql` directly against a fresh Postgres volume — that path must stay idempotent regardless of which one creates the base table.
+* **New env vars** (see `.env.example`): `CONFIDENCE_THRESHOLD`, `MAX_RETRIES`, `COST_CEILING_USD`, `COST_PER_1K_{PROMPT,COMPLETION}_TOKENS_USD`, `DRY_RUN` (defaults to `true` — must be explicitly set `false` to allow real GitHub writes), `OLLAMA_TIMEOUT_MS`, `OLLAMA_MAX_LOG_CHARS`.
+* **New endpoints**: `POST /webhook/incidents/:id/approve` (body: `{approvedBy}`), `POST /webhook/incidents/:id/reject` (body: `{rejectedBy}`).
+* **New files**: `agent/src/config/guardrails.js` (thresholds + cost estimation), `agent/src/fix/fix.service.js` (apply/verify/rollback orchestration for the "dependency" case).
+
+**Bugs found and fixed this session (all were silently breaking things — worth knowing about if something regresses):**
+1. `fetchFailedRunLogs()` was treating GitHub's logs ZIP as raw text — fixed with `adm-zip` extraction.
+2. `node-fetch@3.3.2` is ESM-only; `require("node-fetch")` in CJS returned a non-callable object, so every `fetch()` call was silently broken. Removed the dependency, use Node 20's native global `fetch`.
+3. Ollama's non-streaming API (`stream: false`) sends nothing — not even response headers — until generation fully completes. On this CPU-only machine (observed as slow as ~1.6-2 tokens/sec under load), that regularly exceeded undici's internal 5-minute `headersTimeout`, which fires regardless of any `AbortSignal` passed to `fetch()` — it's a socket-level setting, not a fetch-call setting. Fixed by switching to `stream: true` (headers arrive immediately) AND installing `undici` directly to get a custom `Agent` with both `headersTimeout`/`bodyTimeout` raised via `OLLAMA_TIMEOUT_MS` (default 10 min). Pin `undici@6` — `undici@8`'s latest release uses Node APIs newer than what Node 20 provides (`webidl.util.markAsUncloneable is not a function`).
+4. Ollama's NDJSON stream chunks don't align with network chunk boundaries — a naive per-chunk `split("\n")` can cut a JSON line in half and throw. Fixed by buffering any trailing partial line across chunks.
+5. The model would occasionally rewrite thousands of tokens instead of stopping at the ~100-token JSON schema (observed 2,600+ tokens on one real log) — at CPU inference speed alone that can exceed any reasonable timeout. Fixed with `options: { num_predict: 300 }` in the Ollama request to hard-cap output length.
+6. On messy real-world GitHub Actions logs (full of ISO timestamps, ANSI codes, `##[group]` folding markers), the model would sometimes ignore the JSON schema entirely and produce a generic log transcript/summary instead. Fixed two ways: (a) `cleanLogText()` strips that noise and takes the **tail** of the log rather than the head — CI failures are almost always near the end, not in the runner-setup boilerplate; (b) tightened the system prompt to explicitly forbid narration/summarizing and require finding the actual error near the end.
+7. The model sometimes names the missing package in `proposed_fix` using a generic placeholder like `<module_name>` instead of the real name, which breaks `fix.service.js`'s `extractPackageName()` (it needs a quoted literal). Fixed by requiring in the prompt that "dependency" diagnoses name the exact package in single quotes in `root_cause`.
+8. `waitForWorkflowRun()` originally used the GitHub API's own `?branch=` filter on the runs list, which was observed to miss a run that had, moments later, already completed successfully (likely eventual-consistency lag) — the whole apply attempt threw "no run appeared" even though the fix had actually worked. Fixed by fetching the general recent-runs list and filtering by `head_branch` client-side instead (safe without a timestamp check too, since each incident gets a uniquely-named `fixer/incident-<id>` branch).
+9. If `applyFix()` throws after partially succeeding (e.g. branch/PR created but the verification poll fails), that partial GitHub state was not being recorded anywhere in the incident log — a human would have no idea a branch/PR existed. Fixed: `fix.service.js` attaches whatever progress was made to the thrown error, and `approveIncident()` persists it as `status: "apply_error"` with the partial `fix_branch`/`fix_commit_sha`/etc. filled in.
+10. `agent/node_modules` (787 files) was accidentally committed in the initial commit — `.gitignore` only had `/.env` and `/PROJECT.md`. Fixed and untracked; see PR history.
+
+**Known minor issue (not blocking):** the model doesn't always strictly follow the `action_type` enum — normalization in `ollama.service.js` now clamps any invalid value to `"other"` rather than saving garbage, but it's worth keeping an eye on for Phase 4's eval scoring.
+
+**Not yet done:** Phases 4 (eval suite) and 5 (dashboard).
 
 Keep this section current. After every work session, update it so a future session (or a different Claude Code instance) picks up accurately without re-discovering state from scratch.
 FOLDER STRUCTURE
@@ -81,11 +105,13 @@ devops-agent/
     ├── package.json
     └── src/
         ├── main.js
-        ├── webhook/webhook.controller.js   # POST /webhook/pipeline-failed
-        ├── webhook/webhook.service.js       # core loop
-        ├── github/github.service.js         # fetches + extracts GitHub Actions log ZIPs
-        ├── ollama/ollama.service.js         # sends logs to model, parses JSON diagnosis
-        └── db/db.js                          # postgres pool, saveIncident(), initDb() with retry
+        ├── webhook/webhook.controller.js   # POST /webhook/pipeline-failed, /incidents/:id/{approve,reject}
+        ├── webhook/webhook.service.js       # core loop + guardrail pipeline + approve/reject
+        ├── github/github.service.js         # fetch/extract logs, branch/commit/PR/dispatch/poll for Phase 3
+        ├── ollama/ollama.service.js         # sends logs to model (streaming), parses JSON diagnosis
+        ├── config/guardrails.js             # thresholds + cost estimation, all env-overridable
+        ├── fix/fix.service.js               # apply/verify/rollback orchestration ("dependency" only)
+        └── db/db.js                          # postgres pool, saveIncident()/getIncident()/updateIncident()
 
 ```
 

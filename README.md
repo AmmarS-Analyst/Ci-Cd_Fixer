@@ -6,8 +6,7 @@ gate, and — for the narrow case it can safely automate — applies the fix, ve
 it with a real CI rerun, and rolls back automatically if the rerun fails.
 
 **Status:** All 5 phases done and verified (including against a real GitHub
-Actions repo, not just synthetic test logs). See [CLAUDE.md](CLAUDE.md) for
-project state notes.
+Actions repo, not just synthetic test logs).
 
 ## Eval results
 
@@ -59,7 +58,6 @@ diagnosis and an actual applied fix regardless of confidence.
 devops-agent/
 ├── docker-compose.yml       # 3 containers: agent, ollama, db
 ├── .env.example              # copy to .env before running
-├── CLAUDE.md                 # project state notes
 ├── README.md                 # this file
 ├── scripts/
 │   └── test-webhook.sh       # fires a fake broken build at the agent
@@ -168,10 +166,10 @@ under CPU-only Ollama inference; synthetic cases are much faster.
 a second deployment path, mainly for hands-on K8s learning. See
 [k8s/README.md](k8s/README.md) for setup. Note: `postgres` and `agent` are
 verified running; the `ollama` pod hit environment-specific startup issues on
-the machine this was built on (see CLAUDE.md) that weren't yet resolved —
-treat it as a starting point to debug further, not a guaranteed clean run.
+the machine this was built on that weren't yet resolved — treat it as a
+starting point to debug further, not a guaranteed clean run.
 
 ## Next steps
 
-All 5 phases are complete — see CLAUDE.md for project state notes. Kubernetes
-support (above) is a bonus addition on top, not part of the original roadmap.
+All 5 phases are complete. Kubernetes support (above) is a bonus addition on
+top, not part of the original roadmap.

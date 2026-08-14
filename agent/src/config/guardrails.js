@@ -6,7 +6,7 @@
 // paid-API rate (roughly GPT-4o-mini-class pricing) so the cost-ceiling
 // guardrail is real and testable, and so the number has meaning the day this
 // project swaps in a paid model for quality reasons — that swap is a
-// documented tradeoff (see CLAUDE.md), not a silent behavior change.
+// deliberate tradeoff, not a silent behavior change.
 const guardrails = {
   confidenceThreshold: parseInt(process.env.CONFIDENCE_THRESHOLD || "70", 10),
   maxRetries: parseInt(process.env.MAX_RETRIES || "2", 10),

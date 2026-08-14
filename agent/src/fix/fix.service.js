@@ -6,8 +6,7 @@ const { guardrails } = require("../config/guardrails");
 // named package to package.json. Every other action_type is a natural-
 // language suggestion a human has to read and act on; pretending to
 // auto-apply those would be fabricating a capability the agent doesn't
-// have. Correctly declining is a good outcome, not a shortcut — see
-// CLAUDE.md's Phase 4 philosophy on refusal.
+// have. Correctly declining is a good outcome, not a shortcut.
 const AUTO_APPLICABLE_ACTION_TYPES = ["dependency"];
 
 function extractPackageName(diagnosis) {

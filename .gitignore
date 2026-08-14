@@ -8,3 +8,4 @@ npm-debug.log*
 .claude/
 k8s/secret.yaml
 NOTES.md
+CLAUDE.md

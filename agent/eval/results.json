@@ -1,0 +1,397 @@
+[
+  {
+    "id": "real-dependency",
+    "label": "Real: missing npm dependency",
+    "incidentId": 39,
+    "actionType": "dependency",
+    "confidence": 90,
+    "rootCause": "Missing 'definitely-fake-eval-package-999' dependency",
+    "status": "pending_approval",
+    "escalatedReason": null,
+    "expectedActionTypes": [
+      "dependency"
+    ],
+    "expectedBucket": [
+      "correctly_diagnosed"
+    ],
+    "actualBucket": "correctly_diagnosed",
+    "actionTypeOk": true,
+    "bucketOk": true,
+    "pass": true,
+    "elapsedMs": 274715
+  },
+  {
+    "id": "real-dockerfile",
+    "label": "Real: bad Docker image tag",
+    "incidentId": 22,
+    "actionType": "dockerfile",
+    "confidence": 100,
+    "rootCause": "Repository 'myapp' does not exist or access is denied",
+    "status": "pending_approval",
+    "escalatedReason": null,
+    "expectedActionTypes": [
+      "dockerfile"
+    ],
+    "expectedBucket": [
+      "correctly_diagnosed"
+    ],
+    "actualBucket": "correctly_diagnosed",
+    "actionTypeOk": true,
+    "bucketOk": true,
+    "pass": true,
+    "elapsedMs": 245525
+  },
+  {
+    "id": "real-test",
+    "label": "Real: failing assertion",
+    "incidentId": 23,
+    "actionType": "test",
+    "confidence": 95,
+    "rootCause": "AssertionError - expected 1 + 1 to equal 3, got 2",
+    "status": "pending_approval",
+    "escalatedReason": null,
+    "expectedActionTypes": [
+      "test"
+    ],
+    "expectedBucket": [
+      "correctly_diagnosed"
+    ],
+    "actualBucket": "correctly_diagnosed",
+    "actionTypeOk": true,
+    "bucketOk": true,
+    "pass": true,
+    "elapsedMs": 237226
+  },
+  {
+    "id": "real-envvar",
+    "label": "Real: missing required env var",
+    "incidentId": 24,
+    "actionType": "env_var",
+    "confidence": 100,
+    "rootCause": "REQUIRED_API_KEY environment variable is not set",
+    "status": "pending_approval",
+    "escalatedReason": null,
+    "expectedActionTypes": [
+      "env_var"
+    ],
+    "expectedBucket": [
+      "correctly_diagnosed"
+    ],
+    "actualBucket": "correctly_diagnosed",
+    "actionTypeOk": true,
+    "bucketOk": true,
+    "pass": true,
+    "elapsedMs": 195545
+  },
+  {
+    "id": "real-permissions",
+    "label": "Real: insufficient GITHUB_TOKEN permissions",
+    "incidentId": 25,
+    "actionType": "permissions",
+    "confidence": 95,
+    "rootCause": "Permission denied to push to the repository",
+    "status": "pending_approval",
+    "escalatedReason": null,
+    "expectedActionTypes": [
+      "permissions"
+    ],
+    "expectedBucket": [
+      "correctly_diagnosed"
+    ],
+    "actualBucket": "correctly_diagnosed",
+    "actionTypeOk": true,
+    "bucketOk": true,
+    "pass": true,
+    "elapsedMs": 185760
+  },
+  {
+    "id": "syn-missing-script",
+    "label": "Missing npm script",
+    "incidentId": 26,
+    "actionType": "other",
+    "confidence": 90,
+    "rootCause": "missing script named 'build'",
+    "status": "pending_approval",
+    "escalatedReason": null,
+    "expectedActionTypes": [
+      "other"
+    ],
+    "expectedBucket": [
+      "correctly_diagnosed"
+    ],
+    "actualBucket": "correctly_diagnosed",
+    "actionTypeOk": true,
+    "bucketOk": true,
+    "pass": true,
+    "elapsedMs": 26701
+  },
+  {
+    "id": "syn-missing-dependency",
+    "label": "Missing dependency (lodash)",
+    "incidentId": 27,
+    "actionType": "dependency",
+    "confidence": 90,
+    "rootCause": "Cannot find module 'lodash'",
+    "status": "pending_approval",
+    "escalatedReason": null,
+    "expectedActionTypes": [
+      "dependency"
+    ],
+    "expectedBucket": [
+      "correctly_diagnosed"
+    ],
+    "actualBucket": "correctly_diagnosed",
+    "actionTypeOk": true,
+    "bucketOk": true,
+    "pass": true,
+    "elapsedMs": 26171
+  },
+  {
+    "id": "syn-failing-test",
+    "label": "Failing test assertion",
+    "incidentId": 28,
+    "actionType": "test",
+    "confidence": 90,
+    "rootCause": "API endpoint returned an unexpected status code",
+    "status": "pending_approval",
+    "escalatedReason": null,
+    "expectedActionTypes": [
+      "test"
+    ],
+    "expectedBucket": [
+      "correctly_diagnosed"
+    ],
+    "actualBucket": "correctly_diagnosed",
+    "actionTypeOk": true,
+    "bucketOk": true,
+    "pass": true,
+    "elapsedMs": 35289
+  },
+  {
+    "id": "syn-bad-docker-tag",
+    "label": "Bad Docker image tag",
+    "incidentId": 29,
+    "actionType": "dockerfile",
+    "confidence": 95,
+    "rootCause": "Missing 'myapp:v2.1.0' image",
+    "status": "pending_approval",
+    "escalatedReason": null,
+    "expectedActionTypes": [
+      "dockerfile"
+    ],
+    "expectedBucket": [
+      "correctly_diagnosed"
+    ],
+    "actualBucket": "correctly_diagnosed",
+    "actionTypeOk": true,
+    "bucketOk": true,
+    "pass": true,
+    "elapsedMs": 33361
+  },
+  {
+    "id": "syn-port-conflict",
+    "label": "Port already in use",
+    "incidentId": 30,
+    "actionType": "permissions",
+    "confidence": 95,
+    "rootCause": "Port 8080 is already in use",
+    "status": "pending_approval",
+    "escalatedReason": null,
+    "expectedActionTypes": [
+      "other"
+    ],
+    "expectedBucket": [
+      "correctly_diagnosed"
+    ],
+    "actualBucket": "correctly_diagnosed",
+    "actionTypeOk": false,
+    "bucketOk": true,
+    "pass": false,
+    "elapsedMs": 31588
+  },
+  {
+    "id": "syn-db-connection-refused",
+    "label": "DB connection refused (deliberately ambiguous)",
+    "incidentId": 31,
+    "actionType": "permissions",
+    "confidence": 95,
+    "rootCause": "Connection to database at '127.0.0.1:5432' was refused",
+    "status": "pending_approval",
+    "escalatedReason": null,
+    "expectedActionTypes": [
+      "permissions",
+      "test",
+      "other"
+    ],
+    "expectedBucket": [
+      "correctly_diagnosed",
+      "refused_escalated"
+    ],
+    "actualBucket": "correctly_diagnosed",
+    "actionTypeOk": true,
+    "bucketOk": true,
+    "pass": true,
+    "elapsedMs": 38191
+  },
+  {
+    "id": "syn-missing-env-var",
+    "label": "Missing required env var (API_KEY)",
+    "incidentId": 32,
+    "actionType": "env_var",
+    "confidence": 100,
+    "rootCause": "Required environment variable 'API_KEY' is not set",
+    "status": "pending_approval",
+    "escalatedReason": null,
+    "expectedActionTypes": [
+      "env_var"
+    ],
+    "expectedBucket": [
+      "correctly_diagnosed"
+    ],
+    "actualBucket": "correctly_diagnosed",
+    "actionTypeOk": true,
+    "bucketOk": true,
+    "pass": true,
+    "elapsedMs": 47557
+  },
+  {
+    "id": "syn-git-ssh-permission",
+    "label": "Git SSH permission denied",
+    "incidentId": 33,
+    "actionType": "permissions",
+    "confidence": 90,
+    "rootCause": "Permission denied (publickey)",
+    "status": "pending_approval",
+    "escalatedReason": null,
+    "expectedActionTypes": [
+      "permissions"
+    ],
+    "expectedBucket": [
+      "correctly_diagnosed"
+    ],
+    "actualBucket": "correctly_diagnosed",
+    "actionTypeOk": true,
+    "bucketOk": true,
+    "pass": true,
+    "elapsedMs": 50075
+  },
+  {
+    "id": "syn-no-clear-error",
+    "label": "REFUSAL: no actual error in the log",
+    "incidentId": 34,
+    "actionType": "other",
+    "confidence": 100,
+    "rootCause": "Pipeline was manually canceled",
+    "status": "pending_approval",
+    "escalatedReason": null,
+    "expectedActionTypes": null,
+    "expectedBucket": [
+      "refused_escalated"
+    ],
+    "actualBucket": "correctly_diagnosed",
+    "actionTypeOk": true,
+    "bucketOk": false,
+    "pass": false,
+    "elapsedMs": 30767
+  },
+  {
+    "id": "syn-garbled-log",
+    "label": "REFUSAL: garbled/corrupted log content",
+    "incidentId": 35,
+    "actionType": "other",
+    "confidence": 95,
+    "rootCause": "Corrupt stream segment",
+    "status": "pending_approval",
+    "escalatedReason": null,
+    "expectedActionTypes": null,
+    "expectedBucket": [
+      "refused_escalated"
+    ],
+    "actualBucket": "correctly_diagnosed",
+    "actionTypeOk": true,
+    "bucketOk": false,
+    "pass": false,
+    "elapsedMs": 36036
+  },
+  {
+    "id": "syn-transient-network",
+    "label": "REFUSAL(ideally): transient network timeout during install",
+    "incidentId": 36,
+    "actionType": "other",
+    "confidence": 95,
+    "rootCause": "Network timeout while fetching 'react' from npm",
+    "status": "pending_approval",
+    "escalatedReason": null,
+    "expectedActionTypes": null,
+    "expectedBucket": [
+      "refused_escalated",
+      "correctly_diagnosed"
+    ],
+    "actualBucket": "correctly_diagnosed",
+    "actionTypeOk": true,
+    "bucketOk": true,
+    "pass": true,
+    "elapsedMs": 43848
+  },
+  {
+    "id": "syn-oom-killed",
+    "label": "Process OOM-killed (exit 137)",
+    "incidentId": 37,
+    "actionType": "permissions",
+    "confidence": 90,
+    "rootCause": "Process killed due to high memory usage or resource constraints",
+    "status": "pending_approval",
+    "escalatedReason": null,
+    "expectedActionTypes": [
+      "other"
+    ],
+    "expectedBucket": [
+      "correctly_diagnosed"
+    ],
+    "actualBucket": "correctly_diagnosed",
+    "actionTypeOk": false,
+    "bucketOk": true,
+    "pass": false,
+    "elapsedMs": 35780
+  },
+  {
+    "id": "syn-ambiguous-multi-cause",
+    "label": "Ambiguous: missing dependency AND failing test in same log",
+    "incidentId": 38,
+    "actionType": "dependency",
+    "confidence": 95,
+    "rootCause": "Missing 'axios' dependency",
+    "status": "pending_approval",
+    "escalatedReason": null,
+    "expectedActionTypes": [
+      "dependency",
+      "test"
+    ],
+    "expectedBucket": [
+      "correctly_diagnosed"
+    ],
+    "actualBucket": "correctly_diagnosed",
+    "actionTypeOk": true,
+    "bucketOk": true,
+    "pass": true,
+    "elapsedMs": 47667
+  },
+  {
+    "id": "real-dependency-applied",
+    "label": "Real: dependency fix applied + verified + merged (incident #19)",
+    "incidentId": 19,
+    "actionType": "dependency",
+    "confidence": 95,
+    "rootCause": "Missing 'left-pad' dependency",
+    "status": "applied",
+    "actualBucket": "correctly_fixed",
+    "expectedActionTypes": [
+      "dependency"
+    ],
+    "expectedBucket": [
+      "correctly_fixed"
+    ],
+    "pass": true,
+    "note": "fix_commit_sha=9554208baa5166aae6faaa48ea7b7fc1f33eae82, rerun_conclusion=success"
+  }
+]

@@ -6,9 +6,8 @@ gate, and — for the narrow case it can safely automate — applies the fix, ve
 it with a real CI rerun, and rolls back automatically if the rerun fails.
 
 **Status:** All 5 phases done and verified (including against a real GitHub
-Actions repo, not just synthetic test logs). See [PROJECT.md](PROJECT.md) for
-the full roadmap and [CLAUDE.md](CLAUDE.md) for detailed project context and
-session history.
+Actions repo, not just synthetic test logs). See [CLAUDE.md](CLAUDE.md) for
+project state notes.
 
 ## Eval results
 
@@ -60,11 +59,11 @@ diagnosis and an actual applied fix regardless of confidence.
 devops-agent/
 ├── docker-compose.yml       # 3 containers: agent, ollama, db
 ├── .env.example              # copy to .env before running
-├── CLAUDE.md                 # full project context + session history
-├── PROJECT.md                # 5-phase roadmap
+├── CLAUDE.md                 # project state notes
 ├── README.md                 # this file
 ├── scripts/
 │   └── test-webhook.sh       # fires a fake broken build at the agent
+├── k8s/                      # minikube deployment path — see k8s/README.md
 └── agent/
     ├── Dockerfile
     ├── package.json
@@ -107,8 +106,9 @@ devops-agent/
   free, so this is enforced against an estimated cost modeled on paid-API pricing;
   real and testable today, meaningful the day a paid model gets swapped in.
 
-Every guardrail above has a test that proves it actually trips — see CLAUDE.md's
-CURRENT STATE section for how each was verified.
+Every guardrail above has a test that proves it actually trips (e.g. setting
+an impossible `CONFIDENCE_THRESHOLD` and confirming the incident escalates
+instead of proceeding) rather than just being present in code, unverified.
 
 ## Apply + rollback (Phase 3)
 
@@ -173,6 +173,5 @@ treat it as a starting point to debug further, not a guaranteed clean run.
 
 ## Next steps
 
-All 5 phases are complete — see PROJECT.md and CLAUDE.md for the full history
-of what was built and verified at each stage. Kubernetes support (above) is a
-bonus addition on top, not part of the original roadmap.
+All 5 phases are complete — see CLAUDE.md for project state notes. Kubernetes
+support (above) is a bonus addition on top, not part of the original roadmap.

@@ -39,7 +39,7 @@ Phase 3 — Rollback logic — DONE (verified 2026-08-14, against a real GitHub 
 * Log the full before/after/rollback chain per incident
 * Definition of done: a deliberately bad "fix" (seeded on purpose) gets detected and rolled back automatically, with the full chain visible in the incident log.
 
-Phase 4 — Eval suite (the actual proof artifact)
+Phase 4 — Eval suite (the actual proof artifact) — DONE (2026-08-14)
 
 * Build 15-20 deliberately broken pipelines covering distinct failure categories
 * Run the agent against all of them
@@ -85,9 +85,15 @@ CURRENT STATE (update this section yourself as you make progress — keep it acc
 9. If `applyFix()` throws after partially succeeding (e.g. branch/PR created but the verification poll fails), that partial GitHub state was not being recorded anywhere in the incident log — a human would have no idea a branch/PR existed. Fixed: `fix.service.js` attaches whatever progress was made to the thrown error, and `approveIncident()` persists it as `status: "apply_error"` with the partial `fix_branch`/`fix_commit_sha`/etc. filled in.
 10. `agent/node_modules` (787 files) was accidentally committed in the initial commit — `.gitignore` only had `/.env` and `/PROJECT.md`. Fixed and untracked; see PR history.
 
-**Known minor issue (not blocking):** the model doesn't always strictly follow the `action_type` enum — normalization in `ollama.service.js` now clamps any invalid value to `"other"` rather than saving garbage, but it's worth keeping an eye on for Phase 4's eval scoring.
+**Known minor issue (not blocking):** the model doesn't always strictly follow the `action_type` enum — normalization in `ollama.service.js` now clamps any invalid value to `"other"` rather than saving garbage.
 
-**Not yet done:** Phases 4 (eval suite) and 5 (dashboard).
+**Phase 4 eval suite — done (2026-08-14), 15/19 passed:**
+* 19 cases in `agent/eval/cases.js`: 5 real GitHub Actions fixture failures (one per action_type — dependency/dockerfile/test/env_var/permissions, each a dedicated `workflow_dispatch`-only workflow in the test repo so they're stable and re-triggerable), 13 synthetic `rawLogs` cases, plus 1 case citing the real applied+merged fix from Phase 3 testing (incident #19) as the concrete `correctly_fixed` proof point.
+* Results published in README.md between `<!-- EVAL_RESULTS_START/END -->` markers — regenerate via `node agent/eval/run-eval.js` (writes `agent/eval/results.json` + `agent/eval/RESULTS.md`), then paste `RESULTS.md`'s content into the README between those markers.
+* **The 4 misses are the actual finding, not a bug to fix away:** cases 14 and 15 fed the model a log with *no real error at all* (a cancelled job; garbled binary content) and it still returned a confident 95-100% diagnosis instead of the low-confidence escalation the guardrails are designed to catch. That's a genuine overconfidence-on-noise failure mode in `qwen2.5-coder:7b`, not an infra bug — worth citing directly if asked about this project's honesty about model limitations. Cases 10 and 17 are simpler wrong-category picks at high confidence (port conflict → "permissions" instead of "other"; OOM kill → "permissions" instead of "other").
+* Two YAML gotchas hit while building the 5 fixture workflows, worth knowing if adding more: (a) an unquoted colon-space (`"AssertionError: expected..."`) inside a plain YAML scalar gets parsed as a mapping separator and can silently corrupt the whole file — confirmed by GitHub's workflow-list API falling back to the raw file path as the display name when this happens; (b) newly-pushed workflow files can take several seconds before `workflow_dispatch` recognizes them (a 422 "does not have workflow_dispatch trigger" error right after pushing doesn't necessarily mean the YAML is wrong — retry once first).
+
+**Not yet done:** Phase 5 (dashboard).
 
 Keep this section current. After every work session, update it so a future session (or a different Claude Code instance) picks up accurately without re-discovering state from scratch.
 FOLDER STRUCTURE
@@ -103,6 +109,11 @@ devops-agent/
 └── agent/
     ├── Dockerfile
     ├── package.json
+    ├── eval/
+    │   ├── cases.js                       # Phase 4 eval case definitions (19 cases)
+    │   ├── run-eval.js                     # runs all cases, scores, writes results.json + RESULTS.md
+    │   ├── results.json                    # generated — raw per-case results
+    │   └── RESULTS.md                      # generated — paste into README.md between the EVAL_RESULTS markers
     └── src/
         ├── main.js
         ├── webhook/webhook.controller.js   # POST /webhook/pipeline-failed, /incidents/:id/{approve,reject}
@@ -115,7 +126,7 @@ devops-agent/
 
 ```
 
-As later phases add files (guardrails, rollback, eval runner, dashboard), extend this tree and keep it accurate.
+As Phase 5 adds files (dashboard), extend this tree and keep it accurate.
 CONSTRAINTS AND PREFERENCES (apply throughout, not just Phase 1)
 
 * No Kubernetes. Single-server docker-compose is a deliberate choice, not a limitation to "fix" later unless explicitly asked.

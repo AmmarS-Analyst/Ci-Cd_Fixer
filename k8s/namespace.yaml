@@ -1,0 +1,7 @@
+# All devops-agent resources live in their own namespace so
+# `kubectl get all -n devops-agent` shows exactly this app, and so it's
+# trivial to tear the whole thing down with `kubectl delete namespace devops-agent`.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: devops-agent

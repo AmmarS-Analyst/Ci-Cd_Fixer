@@ -9,6 +9,7 @@ app.use(express.json());
 // POST /webhook/pipeline-failed
 // Body: { runId, owner, repo } — or in test mode, { rawLogs } directly
 app.use("/webhook", require("./webhook/webhook.controller"));
+app.use("/dashboard", require("./dashboard/dashboard.controller"));
 
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 

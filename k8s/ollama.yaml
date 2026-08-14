@@ -1,0 +1,65 @@
+# Ollama itself, plus a PVC so a pulled model survives pod restarts — without
+# this, `ollama pull` would need to be re-run (and re-download the multi-GB
+# model) every time the pod is rescheduled.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-data
+  namespace: devops-agent
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: devops-agent
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # same reasoning as postgres.yaml — single PVC, can't share across pods
+  selector:
+    matchLabels: { app: ollama }
+  template:
+    metadata:
+      labels: { app: ollama }
+    spec:
+      containers:
+        - name: ollama
+          image: ollama/ollama:latest
+          # Without this, Kubernetes defaults an implicit/explicit ":latest" tag to
+          # imagePullPolicy: Always, which ignores the image already loaded into
+          # minikube via `minikube image load` and just keeps retrying a registry
+          # pull (breaks offline/local-only use — this is what actually happened
+          # during testing, worth remembering).
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 11434
+          volumeMounts:
+            - name: data
+              mountPath: /root/.ollama
+          readinessProbe:
+            tcpSocket: { port: 11434 }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket: { port: 11434 }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: ollama-data }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  namespace: devops-agent
+spec:
+  selector: { app: ollama }
+  ports:
+    - port: 11434
+      targetPort: 11434

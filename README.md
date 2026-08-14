@@ -162,7 +162,17 @@ Writes `agent/eval/results.json` (raw) and `agent/eval/RESULTS.md` (the table
 above). Real-run cases hit the live GitHub API and can take several minutes each
 under CPU-only Ollama inference; synthetic cases are much faster.
 
+## Kubernetes
+
+`k8s/` has raw-YAML manifests (no Helm) for running the same app on minikube —
+a second deployment path, mainly for hands-on K8s learning. See
+[k8s/README.md](k8s/README.md) for setup. Note: `postgres` and `agent` are
+verified running; the `ollama` pod hit environment-specific startup issues on
+the machine this was built on (see CLAUDE.md) that weren't yet resolved —
+treat it as a starting point to debug further, not a guaranteed clean run.
+
 ## Next steps
 
 All 5 phases are complete — see PROJECT.md and CLAUDE.md for the full history
-of what was built and verified at each stage.
+of what was built and verified at each stage. Kubernetes support (above) is a
+bonus addition on top, not part of the original roadmap.

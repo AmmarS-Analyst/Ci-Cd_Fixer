@@ -1,0 +1,72 @@
+# A single-replica Postgres. A real production setup would more likely use a
+# StatefulSet (stable pod identity, ordered rollout) — a plain Deployment +
+# PVC works fine at one replica and is the simpler primitive to start with.
+# Worth converting to a StatefulSet as a follow-up learning exercise.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+  namespace: devops-agent
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: devops-agent
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # a second Postgres pod can't share the same PVC — never rolling-update this one
+  selector:
+    matchLabels: { app: postgres }
+  template:
+    metadata:
+      labels: { app: postgres }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          imagePullPolicy: IfNotPresent # loaded locally via `minikube image load` — see k8s/README.md
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_DB
+              value: "agent"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: devops-agent-secret, key: POSTGRES_PASSWORD }
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+              subPath: pgdata # avoids "lost+found" tripping up Postgres's "data dir not empty" check
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: postgres-data }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: devops-agent
+spec:
+  selector: { app: postgres }
+  ports:
+    - port: 5432
+      targetPort: 5432

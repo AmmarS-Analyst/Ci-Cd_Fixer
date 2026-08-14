@@ -6,3 +6,4 @@ npm-debug.log*
 *.log
 .DS_Store
 .claude/
+k8s/secret.yaml

@@ -1,0 +1,45 @@
+services:
+  agent:
+    build: ./agent
+    container_name: devops-agent
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - ollama
+      - db
+    networks:
+      - devops-agent-net
+
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - devops-agent-net
+
+  db:
+    image: postgres:16
+    container_name: agent-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: agent
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./agent/src/db/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - devops-agent-net
+
+networks:
+  devops-agent-net:
+
+volumes:
+  ollama_data:
+  pg_data:

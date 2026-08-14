@@ -1,0 +1,16 @@
+{
+  "name": "devops-agent",
+  "version": "0.1.0",
+  "description": "Phase 1: autonomous CI/CD failure diagnosis agent",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "dev": "node --watch src/main.js"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.18",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "pg": "^8.12.0"
+  }
+}

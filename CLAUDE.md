@@ -47,7 +47,7 @@ Phase 4 — Eval suite (the actual proof artifact) — DONE (2026-08-14)
 * Publish this table in the repo README — this is the single most important deliverable in the whole project
 * Definition of done: a markdown table in the repo showing all 15-20 cases and outcomes, committed and readable without running anything.
 
-Phase 5 — Observability dashboard
+Phase 5 — Observability dashboard — DONE (2026-08-14)
 
 * Simple dashboard on top of the Postgres incident log: incidents handled, auto-fixed vs escalated, avg cost/incident, avg time-to-fix
 * This is the screenshot that goes in the portfolio/resume
@@ -93,7 +93,13 @@ CURRENT STATE (update this section yourself as you make progress — keep it acc
 * **The 4 misses are the actual finding, not a bug to fix away:** cases 14 and 15 fed the model a log with *no real error at all* (a cancelled job; garbled binary content) and it still returned a confident 95-100% diagnosis instead of the low-confidence escalation the guardrails are designed to catch. That's a genuine overconfidence-on-noise failure mode in `qwen2.5-coder:7b`, not an infra bug — worth citing directly if asked about this project's honesty about model limitations. Cases 10 and 17 are simpler wrong-category picks at high confidence (port conflict → "permissions" instead of "other"; OOM kill → "permissions" instead of "other").
 * Two YAML gotchas hit while building the 5 fixture workflows, worth knowing if adding more: (a) an unquoted colon-space (`"AssertionError: expected..."`) inside a plain YAML scalar gets parsed as a mapping separator and can silently corrupt the whole file — confirmed by GitHub's workflow-list API falling back to the raw file path as the display name when this happens; (b) newly-pushed workflow files can take several seconds before `workflow_dispatch` recognizes them (a 422 "does not have workflow_dispatch trigger" error right after pushing doesn't necessarily mean the YAML is wrong — retry once first).
 
-**Not yet done:** Phase 5 (dashboard).
+**Phase 5 dashboard — done (2026-08-14):**
+* `GET /dashboard` (HTML page) and `GET /dashboard/stats` (JSON) added — `agent/src/dashboard/dashboard.service.js` (SQL aggregation) + `dashboard.controller.js` (routes + embedded HTML/CSS/JS, no build step, no external deps).
+* Shows: total incidents, auto-fixed & merged count, escalated count, avg cost/incident, avg time-to-fix (for `applied` incidents), a status breakdown bar chart (status-tinted: green=applied, amber=escalated, orange=rolled_back, gray=everything else), an action_type breakdown bar chart (single blue hue — pure magnitude comparison, no semantic color needed), and a recent-incidents table. Light/dark via `prefers-color-scheme`, following the dataviz skill's palette/mark-spec/status-color rules.
+* Verified in-browser against real data (39 incidents by the time this ran): confirmed no console errors, no horizontal overflow at desktop or mobile widths, dark mode correctly picks up the palette's dark surface tokens.
+* One real bug caught during verification: Postgres returns `NUMERIC` columns (`cost_usd`) as strings via `node-pg`, not JS numbers — the frontend's `fmtMoney()` called `.toFixed()` on a string and threw. Fixed by casting `cost_usd::float8` in the SQL query rather than defensively parsing client-side.
+
+**Not yet done:** nothing — all 5 phases complete.
 
 Keep this section current. After every work session, update it so a future session (or a different Claude Code instance) picks up accurately without re-discovering state from scratch.
 FOLDER STRUCTURE
@@ -122,11 +128,13 @@ devops-agent/
         ├── ollama/ollama.service.js         # sends logs to model (streaming), parses JSON diagnosis
         ├── config/guardrails.js             # thresholds + cost estimation, all env-overridable
         ├── fix/fix.service.js               # apply/verify/rollback orchestration ("dependency" only)
+        ├── dashboard/dashboard.controller.js # GET /dashboard (HTML), GET /dashboard/stats (JSON)
+        ├── dashboard/dashboard.service.js   # SQL aggregation for the dashboard
         └── db/db.js                          # postgres pool, saveIncident()/getIncident()/updateIncident()
 
 ```
 
-As Phase 5 adds files (dashboard), extend this tree and keep it accurate.
+All 5 phases are done — this tree is the final shape unless new work is explicitly requested.
 CONSTRAINTS AND PREFERENCES (apply throughout, not just Phase 1)
 
 * No Kubernetes. Single-server docker-compose is a deliberate choice, not a limitation to "fix" later unless explicitly asked.

@@ -5,10 +5,10 @@ the root cause using a local LLM (Ollama), proposes a fix behind a human-approva
 gate, and — for the narrow case it can safely automate — applies the fix, verifies
 it with a real CI rerun, and rolls back automatically if the rerun fails.
 
-**Status:** Phases 1-4 done and verified (including against a real GitHub Actions
-repo, not just synthetic test logs). Phase 5 (dashboard) not started. See
-[PROJECT.md](PROJECT.md) for the full roadmap and [CLAUDE.md](CLAUDE.md) for
-detailed project context and session history.
+**Status:** All 5 phases done and verified (including against a real GitHub
+Actions repo, not just synthetic test logs). See [PROJECT.md](PROJECT.md) for
+the full roadmap and [CLAUDE.md](CLAUDE.md) for detailed project context and
+session history.
 
 ## Eval results
 
@@ -85,6 +85,9 @@ devops-agent/
         │   └── guardrails.js                # thresholds + cost estimation, all env-overridable
         ├── fix/
         │   └── fix.service.js               # apply/verify/rollback (narrow: "dependency" only)
+        ├── dashboard/
+        │   ├── dashboard.controller.js       # GET /dashboard (HTML), GET /dashboard/stats (JSON)
+        │   └── dashboard.service.js          # SQL aggregation over the incidents table
         └── db/
             ├── db.js                        # postgres pool + incident CRUD
             └── migrations/
@@ -118,6 +121,14 @@ work), the PR is closed and the branch deleted automatically — nothing reaches
 `main` without passing a real verification step. Every other `action_type`
 correctly falls back to `approved_manual_action_required` rather than fabricating
 a fix-application capability the agent doesn't safely have.
+
+## Dashboard (Phase 5)
+
+`GET /dashboard` — a live view over the Postgres incident log: total incidents,
+auto-fixed & merged count, escalated count, avg cost/incident, avg time-to-fix,
+a breakdown by outcome and by diagnosed category, and a recent-incidents table.
+No build step, no external chart library — plain HTML/CSS/JS served straight
+from Express, reading `GET /dashboard/stats` for the underlying JSON.
 
 ## Run it locally
 
@@ -153,4 +164,5 @@ under CPU-only Ollama inference; synthetic cases are much faster.
 
 ## Next steps
 
-Phase 5 (observability dashboard) is the only unstarted phase — see PROJECT.md.
+All 5 phases are complete — see PROJECT.md and CLAUDE.md for the full history
+of what was built and verified at each stage.
